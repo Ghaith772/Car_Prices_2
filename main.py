@@ -23,42 +23,26 @@ _model.load_model(MODEL_PATH)
 
 
 def normalize_text(value: str) -> str:
-
     return re.sub(r"[^A-Za-z0-9]", "", value).capitalize()
-
-class NormalizeRequest(BaseModel):
-    text: str = Field(..., examples=["Range Rover"])
-
-
-class NormalizeResponse(BaseModel):
-    original: str
-    normalized: str
 
 
 class CarRequest(BaseModel):
-    company: str = Field(..., examples=["Range Rover"])
-    model: str = Field(..., examples=["Evoque"])
-    year: int = Field(..., ge=1950, le=2027, examples=[2021])
-    mileage: float = Field(..., ge=0, examples=[45000])
+    company: str = Field(..., examples=["Kia"])
+    model: str = Field(..., examples=["Rio"])
+    year: int = Field(..., ge=1950, le=2027, examples=[2011])
+    mileage: float = Field(..., ge=0, examples=[145000])
     color: str = Field(..., examples=["White"])
-    transmission: str = Field(..., pattern="^(automatic|manual)$", examples=["automatic"])
+    transmission: str = Field(..., examples=["automatic"])
 
 
 class PredictResponse(BaseModel):
-    company_normalized: str
-    model_normalized: str
     predicted_price_usd: float
     warnings: List[str] = []
+
 
 @app.get("/")
 def root():
     return {"status": "ok", "message": "Car price prediction API is running"}
-
-
-# @app.post("/normalize", response_model=NormalizeResponse)
-# def normalize(req: NormalizeRequest):
-#    
-#     return NormalizeResponse(original=req.text, normalized=normalize_text(req.text))
 
 
 @app.post("/predict", response_model=PredictResponse)
@@ -66,7 +50,8 @@ def predict(car: CarRequest):
 
     company_norm = normalize_text(car.company)
     model_norm = normalize_text(car.model)
-
+    color_norm = normalize_text(car.color)
+    transmission_norm = normalize_text(car.transmission)
     row = pd.DataFrame(
         [
             {
@@ -74,8 +59,8 @@ def predict(car: CarRequest):
                 "model": model_norm,
                 "year": car.year,
                 "mileage": car.mileage,
-                "color": car.color,
-                "transmission": car.transmission,
+                "color": color_norm,
+                "transmission": transmission_norm,
             }
         ]
     )
@@ -89,8 +74,6 @@ def predict(car: CarRequest):
     prediction = float(_model.predict(row)[0])
 
     return PredictResponse(
-        company_normalized=company_norm,
-        model_normalized=model_norm,
         predicted_price_usd=round(prediction, 2),
         warnings=warnings,
     )
