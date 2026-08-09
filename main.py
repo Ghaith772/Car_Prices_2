@@ -77,3 +77,4 @@ def predict(car: CarRequest):
         predicted_price_usd=round(prediction, 2),
         warnings=warnings,
     )
+
