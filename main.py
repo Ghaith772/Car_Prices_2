@@ -5,7 +5,7 @@ import xgboost as xgb
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 from typing import List
-
+from fastapi.middleware.cors import CORSMiddleware
 MODEL_PATH = "car_price_xgb_model.json"
 CATEGORIES_PATH = "categories.json"
 CATEGORICAL_COLS = ["company", "model", "color", "transmission"]
@@ -14,7 +14,13 @@ app = FastAPI(
     title="Car Price API",
     description="API for car price prediction using a pre-trained XGBoost model.",
 )
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 with open(CATEGORIES_PATH, "r", encoding="utf-8") as f:
     _categories = json.load(f)
 
