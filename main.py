@@ -2,7 +2,7 @@ import re
 import json
 import pandas as pd
 import xgboost as xgb
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from typing import List
 from fastapi.middleware.cors import CORSMiddleware
@@ -43,7 +43,6 @@ class CarRequest(BaseModel):
 
 class PredictResponse(BaseModel):
     predicted_price_usd: float
-    warnings: List[str] = []
 
 
 @app.get("/")
@@ -71,16 +70,28 @@ def predict(car: CarRequest):
         ]
     )
 
-    warnings: List[str] = []
+    invalid_fields = []
     for col in CATEGORICAL_COLS:
         row[col] = pd.Categorical(row[col], categories=_categories[col])
         if row[col].isnull().any():
-            warnings.append(f"القيمة في '{col}' غير موجودة في بيانات التدريب، ستعامل كـ missing")
+            invalid_fields.append(
+                {
+                    "field": col,
+                    "message": f"القيمة في '{col}' غير موجودة في بيانات التدريب",
+                }
+            )
+
+    if invalid_fields:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "message": "توجد قيم غير صحيحة في الطلب",
+                "errors": invalid_fields,
+            },
+        )
 
     prediction = float(_model.predict(row)[0])
 
     return PredictResponse(
         predicted_price_usd=round(prediction, 2),
-        warnings=warnings,
     )
-
