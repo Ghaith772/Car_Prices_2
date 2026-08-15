@@ -210,9 +210,7 @@ r2 = r2_score(y_test, y_pred)
 rmse = float(np.sqrt(mean_squared_error(y_test, y_pred)))
 mae = mean_absolute_error(y_test, y_pred)
 
-print("\n" + "=" * 60)
-print("نتائج تدريب موديل XGBoost للتنبؤ بسعر السيارة")
-print("=" * 60)
+
 print(f"R² (معامل التحديد): {r2:.4f}")
 print(f"RMSE: ${rmse:,.2f}")
 print(f"MAE : ${mae:,.2f}")
